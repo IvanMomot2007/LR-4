@@ -27,4 +27,13 @@ public:
     int Count() { return count; }
 
     T& operator[](int index) { return data[index]; }
+
+    void RemoveAt(int index) {
+        if (index < 0 || index >= count) return;
+
+        for (int i = index; i < count - 1; i++) {
+            data[i] = data[i + 1];
+        }
+        count--;
+    }
 };

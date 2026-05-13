@@ -9,88 +9,100 @@ using namespace System::Windows::Forms;
 public ref class PictureBody {
 public:
     SpaceBody* BallObj;
-    PictureBox^ Pb;
     double Scale;
     String^ Name;
     Point p0;
     double AspectRatio;
-    bool IsCollided;
-    int CollisionTimer;
-    Image^ OriginalImage;
 
-    PictureBody(SpaceBody* ball, Control^ parent, double scale) {
+    bool IsExploding;
+    bool IsDead;
+    int CollisionTimer;
+    int MaxCollisionTime;
+
+    Image^ PlanetImage;
+    Rectangle VisualBounds;
+
+    PictureBody(SpaceBody* ball, double scale) {
         BallObj = ball;
         Scale = scale;
         p0 = Point(0, 0);
         AspectRatio = 1.0;
-        IsCollided = false;
+
+        IsExploding = false;
+        IsDead = false;
+        MaxCollisionTime = 60;
         CollisionTimer = 0;
-        OriginalImage = nullptr;
-        Pb = CreatePb(parent, 50);
+        PlanetImage = nullptr;
     }
 
     void SetSettings(String^ name) {
         String^ imagePath = System::IO::Path::Combine(System::AppDomain::CurrentDomain->BaseDirectory, "ImagesSatellite", name + ".jpg");
         try {
             if (System::IO::File::Exists(imagePath)) {
-                Image^ img = Image::FromFile(imagePath);
-                Pb->Image = img;
-                OriginalImage = img;
-                AspectRatio = (double)img->Width / img->Height;
+                PlanetImage = Image::FromFile(imagePath);
+                AspectRatio = (double)PlanetImage->Width / PlanetImage->Height;
             }
         }
         catch (...) {}
         BallObj = PlanetsData::GetPlanet(name);
     }
 
-    void Update() {
+    void UpdateLogic() {
+        if (IsExploding && CollisionTimer > 0) {
+            CollisionTimer--;
+        }
+        else if (IsExploding && CollisionTimer <= 0) {
+            IsExploding = false;
+            IsDead = true;
+        }
+    }
+
+    void Draw(Graphics^ g) {
+        if (BallObj == nullptr || IsDead) return;
+
         double k = 20;
         int height = (int)(BallObj->Radius * Scale * k);
         if (height < 10) height = 10;
         int width = (int)(height * AspectRatio);
 
-        Pb->Size = Drawing::Size(width, height);
-        Pb->Location = Point(
-            p0.X + (int)(BallObj->get_R().X * Scale) - Pb->Width / 2,
-            p0.Y - (int)(BallObj->get_R().Y * Scale) - Pb->Height / 2
-        );
+        int x = p0.X + (int)(BallObj->get_R().X * Scale) - width / 2;
+        int y = p0.Y - (int)(BallObj->get_R().Y * Scale) - height / 2;
 
-        UpdateCollisionAnimation();
+        VisualBounds = Rectangle(x, y, width, height);
+
+        if (IsExploding) {
+            float ratio = 1.0f - ((float)CollisionTimer / MaxCollisionTime);
+
+            int expSize = height + (int)(height * ratio * 2.5f); 
+            int alpha = 255 - (int)(255 * ratio);
+            if (alpha < 0) alpha = 0;
+
+            int exX = p0.X + (int)(BallObj->get_R().X * Scale) - expSize / 2;
+            int exY = p0.Y - (int)(BallObj->get_R().Y * Scale) - expSize / 2;
+
+            Color fireColor = Color::FromArgb(alpha, 255, 69, 0);
+            Color coreColor = Color::FromArgb(alpha, 255, 215, 0);
+
+            SolidBrush^ brush1 = gcnew SolidBrush(fireColor);
+            SolidBrush^ brush2 = gcnew SolidBrush(coreColor);
+
+            g->FillEllipse(brush1, exX, exY, expSize, expSize);
+            g->FillEllipse(brush2, exX + expSize / 4, exY + expSize / 4, expSize / 2, expSize / 2);
+
+            delete brush1;
+            delete brush2;
+        }
+        else {
+            if (PlanetImage != nullptr) {
+                g->DrawImage(PlanetImage, VisualBounds);
+            }
+        }
     }
 
     void StartCollision() {
-        IsCollided = true;
-        CollisionTimer = 32;
-    }
-
-    void UpdateCollisionAnimation() {
-        if (IsCollided && CollisionTimer > 0) {
-            CollisionTimer--;
-
-            if (CollisionTimer % 4 < 2) {
-                if (OriginalImage != nullptr) {
-                    Pb->Image = OriginalImage;
-                    Pb->BackColor = Color::Transparent;
-                }
-            }
-            else {
-                Pb->BackColor = Color::OrangeRed;
-                Pb->Image = nullptr;
-            }
+        if (!IsExploding && !IsDead) {
+            IsExploding = true;
+            CollisionTimer = MaxCollisionTime;
         }
-        else if (IsCollided && CollisionTimer <= 0) {
-            IsCollided = false;
-            Pb->Visible = false;
-            Pb->BackColor = Color::Transparent;
-        }
-    }
-
-    static PictureBox^ CreatePb(Control^ parent, int size) {
-        PictureBox^ pb = gcnew PictureBox();
-        pb->Size = Drawing::Size(size, size);
-        pb->SizeMode = PictureBoxSizeMode::Zoom;
-        pb->BackColor = Color::Transparent;
-        parent->Controls->Add(pb);
-        return pb;
     }
 };
