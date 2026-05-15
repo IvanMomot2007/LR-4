@@ -58,6 +58,7 @@ namespace Satellite {
         double scale;
 
         SpaceBody* activeSatellite;
+        int lastSatelliteCount = 0;
 
         double baseMass = 7.3177e22;
         double baseOrbit = 384408e3;
@@ -185,15 +186,17 @@ namespace Satellite {
             for (int i = 0; i < pbs->Count; i++) {
                 for (int j = i + 1; j < pbs->Count; j++) {
                     if (!pbs[i]->IsExploding && !pbs[i]->IsDead &&
-                        !pbs[j]->IsExploding && !pbs[j]->IsDead)
+                        !pbs[j]->IsExploding && !pbs[j]->IsDead &&
+                        pbs[i]->BallObj != nullptr && pbs[j]->BallObj != nullptr)
                     {
-                        Rectangle r1 = pbs[i]->VisualBounds;
-                        Rectangle r2 = pbs[j]->VisualBounds;
+                        Vector r1 = pbs[i]->BallObj->get_R();
+                        Vector r2 = pbs[j]->BallObj->get_R();
+                        Vector dist = r1 - r2;
+                        double distance = dist.GetLength();
 
-                        r1.Inflate(-r1.Width * 0.2f, -r1.Height * 0.2f);
-                        r2.Inflate(-r2.Width * 0.2f, -r2.Height * 0.2f);
+                        double minDist = pbs[i]->BallObj->Radius + pbs[j]->BallObj->Radius;
 
-                        if (r1.IntersectsWith(r2)) {
+                        if (distance <= minDist) {
                             if (i != 0) pbs[i]->StartCollision();
                             if (j != 0) pbs[j]->StartCollision();
                         }
@@ -201,9 +204,43 @@ namespace Satellite {
                 }
             }
 
-            if (pbs->Count > 1) {
-                if (!pbs[1]->IsDead)
-                    label1->Text = "V.X: " + pbs[1]->BallObj->get_V().X;
+            if (pbs->Count > 1 && !pbs[0]->IsDead && pbs[0]->BallObj != nullptr) {
+                for (int i = 1; i < pbs->Count; i++) {
+                    if (!pbs[i]->IsExploding && !pbs[i]->IsDead && pbs[i]->BallObj != nullptr) {
+                        Vector rPlanet = pbs[0]->BallObj->get_R();
+                        Vector rSat = pbs[i]->BallObj->get_R();
+                        Vector dist = rSat - rPlanet;
+                        double distance = dist.GetLength();
+
+                        double minDist = pbs[0]->BallObj->Radius + pbs[i]->BallObj->Radius;
+
+                        if (distance <= minDist) {
+                            pbs[i]->StartCollision();
+                        }
+                    }
+                }
+            }
+
+            for (int i = pbs->Count - 1; i > 0; i--) {
+                if (pbs[i]->IsDead) {
+                    pbs->RemoveAt(i);
+                }
+            }
+
+            if (pbs->Count != lastSatelliteCount) {
+                lastSatelliteCount = pbs->Count;
+                UpdateListSattelites();
+            }
+
+            if (activeSatellite != nullptr && pbs->Count > 1) {
+                Vector heightVec = activeSatellite->get_R() - physicsModel->Planet->get_R();
+                double height = heightVec.GetLength() - physicsModel->Planet->Radius;
+                double velocity = activeSatellite->get_V().GetLength();
+
+                String^ velStr = velocity.ToString("F2");
+                String^ heightStr = (height / 1000.0).ToString("F0");
+
+                label1->Text = "V: " + velStr + " m/s\r\nH: " + heightStr + " km";
             }
 
             this->Invalidate();
@@ -383,12 +420,12 @@ namespace Satellite {
             this->tbOrbit->Scroll += gcnew System::EventHandler(this, &MainForm::tbSpeed_Scroll);
 
             this->label1->ForeColor = Color::White;
-            this->label1->Location = Point(744, 201);
+            this->label1->Location = Point(744, 180);
             this->label1->Name = L"label1";
-            this->label1->Size = Drawing::Size(38, 15);
+            this->label1->Size = Drawing::Size(180, 50);
             this->label1->TabIndex = 0;
-            this->label1->Text = L"label1";
-            this->label1->Visible = false;
+            this->label1->Text = L"V: 0 m/s\r\nH: 0 km";
+            this->label1->Visible = true;
 
             this->BackColor = Color::Black;
             this->ClientSize = Drawing::Size(960, 515);

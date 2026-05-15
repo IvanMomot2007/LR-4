@@ -45,6 +45,12 @@ public:
     void MoveSatellite(double dt) {
         for (int i = 0; i < Satellites.Count(); i++) {
             SpaceBody* satellite = Satellites[i];
+
+            if (satellite->get_V().GetLength() == 0 && satellite->get_A().GetLength() < 0.01) {
+                satellite->Mp.Move(dt);
+                continue;
+            }
+
             Vector r = Planet->Mp.R - satellite->Mp.R;
 
             double sqLen = r.SqLength();

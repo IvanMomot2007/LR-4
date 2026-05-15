@@ -103,6 +103,9 @@ public:
         if (!IsExploding && !IsDead) {
             IsExploding = true;
             CollisionTimer = MaxCollisionTime;
+            if (BallObj != nullptr) {
+                BallObj->set_V(Vector(0, 0));
+            }
         }
     }
 };
