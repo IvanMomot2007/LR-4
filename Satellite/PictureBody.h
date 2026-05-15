@@ -4,11 +4,10 @@
 
 using namespace System;
 using namespace System::Drawing;
-using namespace System::Windows::Forms;
 
 public ref class PictureBody {
 public:
-    SpaceBody* BallObj;
+    SpaceBody* BodyObj;
     double Scale;
     String^ Name;
     Point p0;
@@ -22,8 +21,10 @@ public:
     Image^ PlanetImage;
     Rectangle VisualBounds;
 
+    int ExplodeX, ExplodeY, ExplodeSize;
+
     PictureBody(SpaceBody* ball, double scale) {
-        BallObj = ball;
+        BodyObj = ball;
         Scale = scale;
         p0 = Point(0, 0);
         AspectRatio = 1.0;
@@ -43,8 +44,9 @@ public:
                 AspectRatio = (double)PlanetImage->Width / PlanetImage->Height;
             }
         }
-        catch (...) {}
-        BallObj = PlanetsData::GetPlanet(name);
+        catch (...) {
+            PlanetImage = nullptr;
+        }
     }
 
     void UpdateLogic() {
@@ -58,41 +60,37 @@ public:
     }
 
     void Draw(Graphics^ g) {
-        if (BallObj == nullptr || IsDead) return;
-
-        double k = 20;
-        int height = (int)(BallObj->Radius * Scale * k);
-        if (height < 10) height = 10;
-        int width = (int)(height * AspectRatio);
-
-        int x = p0.X + (int)(BallObj->get_R().X * Scale) - width / 2;
-        int y = p0.Y - (int)(BallObj->get_R().Y * Scale) - height / 2;
-
-        VisualBounds = Rectangle(x, y, width, height);
+        if (IsDead) return;
 
         if (IsExploding) {
             float ratio = 1.0f - ((float)CollisionTimer / MaxCollisionTime);
-
-            int expSize = height + (int)(height * ratio * 2.5f); 
+            int expSize = ExplodeSize + (int)(ExplodeSize * ratio * 2.5f);
             int alpha = 255 - (int)(255 * ratio);
             if (alpha < 0) alpha = 0;
 
-            int exX = p0.X + (int)(BallObj->get_R().X * Scale) - expSize / 2;
-            int exY = p0.Y - (int)(BallObj->get_R().Y * Scale) - expSize / 2;
+            int exX = ExplodeX + ExplodeSize / 2 - expSize / 2;
+            int exY = ExplodeY + ExplodeSize / 2 - expSize / 2;
 
-            Color fireColor = Color::FromArgb(alpha, 255, 69, 0);
-            Color coreColor = Color::FromArgb(alpha, 255, 215, 0);
+            SolidBrush^ fireBrush = gcnew SolidBrush(Color::FromArgb(alpha, 255, 69, 0));
+            SolidBrush^ coreBrush = gcnew SolidBrush(Color::FromArgb(alpha, 255, 215, 0));
 
-            SolidBrush^ brush1 = gcnew SolidBrush(fireColor);
-            SolidBrush^ brush2 = gcnew SolidBrush(coreColor);
+            g->FillEllipse(fireBrush, exX, exY, expSize, expSize);
+            g->FillEllipse(coreBrush, exX + expSize / 4, exY + expSize / 4, expSize / 2, expSize / 2);
 
-            g->FillEllipse(brush1, exX, exY, expSize, expSize);
-            g->FillEllipse(brush2, exX + expSize / 4, exY + expSize / 4, expSize / 2, expSize / 2);
-
-            delete brush1;
-            delete brush2;
+            delete fireBrush;
+            delete coreBrush;
         }
-        else {
+        else if (BodyObj != nullptr) {
+            double k = 20;
+            int height = (int)(BodyObj->Radius * Scale * k);
+            if (height < 10) height = 10;
+            int width = (int)(height * AspectRatio);
+
+            int x = p0.X + (int)(BodyObj->get_R().X * Scale) - width / 2;
+            int y = p0.Y - (int)(BodyObj->get_R().Y * Scale) - height / 2;
+
+            VisualBounds = Rectangle(x, y, width, height);
+
             if (PlanetImage != nullptr) {
                 g->DrawImage(PlanetImage, VisualBounds);
             }
@@ -100,12 +98,18 @@ public:
     }
 
     void StartCollision() {
-        if (!IsExploding && !IsDead) {
+        if (!IsExploding && !IsDead && BodyObj != nullptr) {
             IsExploding = true;
             CollisionTimer = MaxCollisionTime;
-            if (BallObj != nullptr) {
-                BallObj->set_V(Vector(0, 0));
-            }
+
+            double k = 20;
+            int height = (int)(BodyObj->Radius * Scale * k);
+            if (height < 10) height = 10;
+            int width = (int)(height * AspectRatio);
+
+            ExplodeX = p0.X + (int)(BodyObj->get_R().X * Scale) - width / 2;
+            ExplodeY = p0.Y - (int)(BodyObj->get_R().Y * Scale) - height / 2;
+            ExplodeSize = height;
         }
     }
 };
