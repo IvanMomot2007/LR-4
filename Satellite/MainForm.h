@@ -86,6 +86,10 @@ namespace Satellite {
                 pbs[i]->UpdateLogic();
 
                 if (i > 0 && pbs[i]->IsDead) {
+                    if (activeSatellite == pbs[i]->BodyObj) {
+                        activeSatellite = nullptr;
+                    }
+
                     for (int k = 0; k < physicsModel->Satellites.Count(); k++) {
                         if (physicsModel->Satellites[k] == pbs[i]->BodyObj) {
                             physicsModel->Satellites.RemoveAt(k);
@@ -124,10 +128,11 @@ namespace Satellite {
             if (needsListUpdate) {
                 cbSatellites->Items->Clear();
                 for (int k = 0; k < physicsModel->Satellites.Count(); k++)
-                    cbSatellites->Items->Add("Satellite " + k);
+                    cbSatellites->Items->Add("Satellite " + (k + 1));
+                if (cbSatellites->Items->Count > 0)
+                    cbSatellites->SelectedIndex = 0;
             }
 
-            // ПРАВИЛЬНЫЙ ВЫВОД ТЕЛЕМЕТРИИ
             if (activeSatellite != nullptr && pbs->Count > 1) {
                 Vector heightVec = activeSatellite->get_R() - physicsModel->Planet->get_R();
                 double height = heightVec.GetLength() - physicsModel->Planet->Radius;
@@ -152,13 +157,24 @@ namespace Satellite {
 
             cbSatellites->Items->Clear();
             for (int i = 0; i < physicsModel->Satellites.Count(); i++)
-                cbSatellites->Items->Add("Satellite " + i);
+                cbSatellites->Items->Add("Satellite " + (i+1));
             cbSatellites->SelectedIndex = cbSatellites->Items->Count - 1;
 
             tbSpeed->Enabled = true; tbMass->Enabled = true; tbOrbit->Enabled = true;
         }
 
-        void bStart_Click(System::Object^ sender, System::EventArgs^ e) { tPhisics->Start(); label1->Visible = true; }
+        void bStart_Click(System::Object^ sender, System::EventArgs^ e)
+        {
+            if (!tPhisics->Enabled) {
+                tPhisics->Start();
+                bStart->Text = L"Pause";
+                label1->Visible = true;
+            }
+            else {
+                tPhisics->Stop();
+                bStart->Text = L"Resume";
+            }
+        }
 
         void comboBox1_SelectedIndexChanged(System::Object^ sender, System::EventArgs^ e) {
             String^ name = cbPlanets->SelectedItem->ToString();
@@ -208,6 +224,7 @@ namespace Satellite {
         void InitializeComponent(void)
         {
             this->components = (gcnew System::ComponentModel::Container());
+            System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(MainForm::typeid));
             this->tPhisics = (gcnew System::Windows::Forms::Timer(this->components));
             this->bStart = (gcnew System::Windows::Forms::Button());
             this->lblPlanets = (gcnew System::Windows::Forms::Label());
@@ -229,109 +246,160 @@ namespace Satellite {
             (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->tbMass))->BeginInit();
             (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->tbOrbit))->BeginInit();
             this->SuspendLayout();
-
+            // 
+            // tPhisics
+            // 
             this->tPhisics->Interval = 16;
             this->tPhisics->Tick += gcnew System::EventHandler(this, &MainForm::tPhisics_Tick);
-
+            // 
+            // bStart
+            // 
             this->bStart->BackColor = System::Drawing::SystemColors::Control;
-            this->bStart->Font = (gcnew System::Drawing::Font(L"Bookman Old Style", 20.25f));
+            this->bStart->Font = (gcnew System::Drawing::Font(L"Bookman Old Style", 18.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+                static_cast<System::Byte>(204)));
             this->bStart->Location = System::Drawing::Point(827, 12);
             this->bStart->Name = L"bStart";
             this->bStart->Size = System::Drawing::Size(121, 40);
+            this->bStart->TabIndex = 14;
             this->bStart->Text = L"Start";
             this->bStart->UseVisualStyleBackColor = false;
             this->bStart->Click += gcnew System::EventHandler(this, &MainForm::bStart_Click);
-
+            // 
+            // lblPlanets
+            // 
             this->lblPlanets->ForeColor = System::Drawing::Color::White;
             this->lblPlanets->Location = System::Drawing::Point(777, 81);
             this->lblPlanets->Name = L"lblPlanets";
             this->lblPlanets->Size = System::Drawing::Size(48, 15);
+            this->lblPlanets->TabIndex = 13;
             this->lblPlanets->Text = L"Planets:";
-
+            // 
+            // cbPlanets
+            // 
             this->cbPlanets->Location = System::Drawing::Point(827, 73);
             this->cbPlanets->Name = L"cbPlanets";
             this->cbPlanets->Size = System::Drawing::Size(121, 21);
+            this->cbPlanets->TabIndex = 12;
             this->cbPlanets->SelectedIndexChanged += gcnew System::EventHandler(this, &MainForm::comboBox1_SelectedIndexChanged);
-
+            // 
+            // bAddSatellite
+            // 
             this->bAddSatellite->BackColor = System::Drawing::SystemColors::Control;
-            this->bAddSatellite->Font = (gcnew System::Drawing::Font(L"Bookman Old Style", 12.0f));
+            this->bAddSatellite->Font = (gcnew System::Drawing::Font(L"Bookman Old Style", 12));
             this->bAddSatellite->Location = System::Drawing::Point(827, 466);
             this->bAddSatellite->Name = L"bAddSatellite";
             this->bAddSatellite->Size = System::Drawing::Size(121, 37);
+            this->bAddSatellite->TabIndex = 11;
             this->bAddSatellite->Text = L"Add Satellite";
             this->bAddSatellite->UseVisualStyleBackColor = false;
             this->bAddSatellite->Click += gcnew System::EventHandler(this, &MainForm::bAddSatellite_Click);
-
+            // 
+            // tbScale
+            // 
             this->tbScale->Location = System::Drawing::Point(827, 126);
             this->tbScale->Maximum = 20;
             this->tbScale->Minimum = -20;
             this->tbScale->Name = L"tbScale";
             this->tbScale->Size = System::Drawing::Size(121, 45);
+            this->tbScale->TabIndex = 10;
             this->tbScale->Scroll += gcnew System::EventHandler(this, &MainForm::tbScale_Scroll);
-
+            // 
+            // cbSatellites
+            // 
             this->cbSatellites->Location = System::Drawing::Point(827, 270);
             this->cbSatellites->Name = L"cbSatellites";
             this->cbSatellites->Size = System::Drawing::Size(121, 21);
+            this->cbSatellites->TabIndex = 8;
             this->cbSatellites->SelectedIndexChanged += gcnew System::EventHandler(this, &MainForm::cbSatellites_SelectedIndexChanged_1);
-
+            // 
+            // lblSatelites
+            // 
             this->lblSatelites->ForeColor = System::Drawing::Color::White;
             this->lblSatelites->Location = System::Drawing::Point(772, 273);
             this->lblSatelites->Name = L"lblSatelites";
             this->lblSatelites->Size = System::Drawing::Size(53, 15);
+            this->lblSatelites->TabIndex = 9;
             this->lblSatelites->Text = L"Satelites:";
-
+            // 
+            // lblScale
+            // 
             this->lblScale->ForeColor = System::Drawing::Color::White;
             this->lblScale->Location = System::Drawing::Point(777, 137);
             this->lblScale->Name = L"lblScale";
             this->lblScale->Size = System::Drawing::Size(34, 15);
+            this->lblScale->TabIndex = 7;
             this->lblScale->Text = L"Scale";
-
+            // 
+            // lblSpeed
+            // 
             this->lblSpeed->ForeColor = System::Drawing::Color::White;
             this->lblSpeed->Location = System::Drawing::Point(777, 327);
             this->lblSpeed->Name = L"lblSpeed";
             this->lblSpeed->Size = System::Drawing::Size(42, 15);
+            this->lblSpeed->TabIndex = 5;
             this->lblSpeed->Text = L"Speed:";
-
+            // 
+            // tbSpeed
+            // 
             this->tbSpeed->Enabled = false;
             this->tbSpeed->Location = System::Drawing::Point(827, 318);
             this->tbSpeed->Maximum = 20;
             this->tbSpeed->Name = L"tbSpeed";
             this->tbSpeed->Size = System::Drawing::Size(121, 45);
+            this->tbSpeed->TabIndex = 6;
             this->tbSpeed->Scroll += gcnew System::EventHandler(this, &MainForm::tbSpeed_Scroll);
-
+            // 
+            // lblMass
+            // 
             this->lblMass->ForeColor = System::Drawing::Color::White;
             this->lblMass->Location = System::Drawing::Point(777, 364);
             this->lblMass->Name = L"lblMass";
             this->lblMass->Size = System::Drawing::Size(37, 15);
+            this->lblMass->TabIndex = 3;
             this->lblMass->Text = L"Mass:";
-
+            // 
+            // tbMass
+            // 
             this->tbMass->Enabled = false;
             this->tbMass->Location = System::Drawing::Point(827, 364);
             this->tbMass->Maximum = 20;
             this->tbMass->Name = L"tbMass";
             this->tbMass->Size = System::Drawing::Size(121, 45);
+            this->tbMass->TabIndex = 4;
             this->tbMass->Scroll += gcnew System::EventHandler(this, &MainForm::tbSpeed_Scroll);
-
+            // 
+            // lblOrbit
+            // 
             this->lblOrbit->ForeColor = System::Drawing::Color::White;
             this->lblOrbit->Location = System::Drawing::Point(780, 425);
             this->lblOrbit->Name = L"lblOrbit";
             this->lblOrbit->Size = System::Drawing::Size(37, 15);
+            this->lblOrbit->TabIndex = 1;
             this->lblOrbit->Text = L"Orbit:";
-
+            // 
+            // tbOrbit
+            // 
             this->tbOrbit->Enabled = false;
             this->tbOrbit->Location = System::Drawing::Point(827, 415);
             this->tbOrbit->Maximum = 20;
             this->tbOrbit->Name = L"tbOrbit";
             this->tbOrbit->Size = System::Drawing::Size(121, 45);
+            this->tbOrbit->TabIndex = 2;
             this->tbOrbit->Scroll += gcnew System::EventHandler(this, &MainForm::tbSpeed_Scroll);
-
+            // 
+            // label1
+            // 
+            this->label1->BackColor = System::Drawing::Color::Transparent;
             this->label1->ForeColor = System::Drawing::Color::White;
-            this->label1->Location = System::Drawing::Point(744, 180);
+            this->label1->Location = System::Drawing::Point(12, 9);
             this->label1->Name = L"label1";
             this->label1->Size = System::Drawing::Size(180, 40);
+            this->label1->TabIndex = 0;
             this->label1->Text = L"V: 0 m/s  H: 0 km";
             this->label1->Visible = false;
-
+            // 
+            // MainForm
+            // 
             this->BackColor = System::Drawing::Color::Black;
             this->ClientSize = System::Drawing::Size(960, 515);
             this->Controls->Add(this->label1);
@@ -349,14 +417,16 @@ namespace Satellite {
             this->Controls->Add(this->cbPlanets);
             this->Controls->Add(this->lblPlanets);
             this->Controls->Add(this->bStart);
+            this->Icon = (cli::safe_cast<System::Drawing::Icon^>(resources->GetObject(L"$this.Icon")));
             this->Name = L"MainForm";
-            this->Text = L"SpaceX Simulation";
+            this->Text = L"Satellite Simulation";
             (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->tbScale))->EndInit();
             (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->tbSpeed))->EndInit();
             (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->tbMass))->EndInit();
             (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->tbOrbit))->EndInit();
             this->ResumeLayout(false);
             this->PerformLayout();
+
         }
     };
 }
