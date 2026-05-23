@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="CustomList&lt;T&gt;">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQIAAAAAAAAAAAAABAIAAAQBAAEAAAAACAAQAAAAAAA=</HashCode>
+      <FileName>CustomList.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MP">
+    <Position X="2.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAAIAAAAAAAAAAAAAACgAAAAAAAAAAIgIQAQA=</HashCode>
+      <FileName>MP.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PhysicsModel">
+    <Position X="4" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAQAAAAAAAAARAIACAAAAIAgAAAoACAAAAAA=</HashCode>
+      <FileName>PhysicsModel.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SpaceBody">
+    <Position X="5.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAIIAAQAAAAEAAAACAAgAAAAQAIAQAAAAAAAAAAAggA=</HashCode>
+      <FileName>SpaceBody.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Vector">
+    <Position X="7.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAAAAABAAAAAAAiIAIAAAAAEAgAgQQYAA=</HashCode>
+      <FileName>Vector.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
